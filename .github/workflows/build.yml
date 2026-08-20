@@ -24,7 +24,10 @@ jobs:
           javac -cp $ANDROID_HOME/platforms/android-33/android.jar \
             -d app/build \
             app/src/main/java/com/example/netradar/*.java
-          dx --dex --output=app/build/classes.dex app/build
+          # 使用 d8 替代 dx
+          $ANDROID_HOME/build-tools/33.0.0/d8 --lib $ANDROID_HOME/platforms/android-33/android.jar \
+            --output app/build/ \
+            app/build/com/example/netradar/*.class
           aapt package -f -M app/src/main/AndroidManifest.xml \
             -I $ANDROID_HOME/platforms/android-33/android.jar \
             -F app/build/NetRadar_unsigned.apk \
