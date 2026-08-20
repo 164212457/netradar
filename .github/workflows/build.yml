@@ -1,0 +1,42 @@
+name: Build APK
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Build APK
+        run: |
+          mkdir -p app/build
+          aapt package -f -m -M app/src/main/AndroidManifest.xml \
+            -I $ANDROID_HOME/platforms/android-33/android.jar \
+            -J app/src/main/java \
+            -S app/src/main/res
+          javac -cp $ANDROID_HOME/platforms/android-33/android.jar \
+            -d app/build \
+            app/src/main/java/com/example/netradar/*.java
+          dx --dex --output=app/build/classes.dex app/build
+          aapt package -f -M app/src/main/AndroidManifest.xml \
+            -I $ANDROID_HOME/platforms/android-33/android.jar \
+            -F app/build/NetRadar_unsigned.apk \
+            app/build/classes.dex
+          apksigner sign --ks ~/.android/debug.keystore \
+            --ks-key-alias androiddebugkey \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            app/build/NetRadar_unsigned.apk
+          cp app/build/NetRadar_unsigned.apk NetRadar.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetRadar
+          path: NetRadar.apk
